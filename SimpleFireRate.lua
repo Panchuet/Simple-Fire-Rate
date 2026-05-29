@@ -18,7 +18,7 @@ function SimpleFireRate:Start()
     self.modeIndex = self.dataContainer.GetBool("startSlow") and 1 or 0
     self.fastCooldown = self.dataContainer.GetFloat("fastCooldown")
     self.slowCooldown = self.dataContainer.GetFloat("slowCooldown")
-    self.switchCooldownDuration = self.dataContainer.GetFloat("switchCooldown")
+    self.switchCooldown = self.dataContainer.GetFloat("switchCooldown")
     self.switchKeybind = self.dataContainer.GetString("switchKeybind")
 
     self.selectorValues = {}
@@ -45,7 +45,8 @@ end
 
 function SimpleFireRate:SwitchMode()
     self.modeIndex = 1 - self.modeIndex
-    self.switchTimer = self.switchCooldownDuration
+    self.switchTimer = self.switchCooldown
+    self.weapon.LockWeapon()
     
     if self.animator ~= nil then
         self.animator.SetTrigger(self.switchParameter)
@@ -64,14 +65,17 @@ function SimpleFireRate:Update()
 
     if self.switchTimer > 0 then
         self.switchTimer = self.switchTimer - Time.deltaTime
+
+        if self.switchTimer <= 0 then
+            self.weapon.UnlockWeapon()
+        end
     end
 
-    local isEquippedByPlayer = (self.weapon.user ~= nil and self.weapon.user.isPlayer and self.weapon.isUnholstered)
-
-    if isEquippedByPlayer
-        and Input.GetKeyDown(self.switchKeybind)
-        and self.switchTimer <= 0
+    if self.switchTimer <= 0
         and not self.weapon.isReloading
+        and self.weapon.user ~= nil
+        and self.weapon.user.isPlayer
+        and Input.GetKeyDown(self.switchKeybind)
     then
         self:SwitchMode()
     end
